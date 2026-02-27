@@ -157,11 +157,46 @@ kubectl apply -f k8s/ingress.yaml
 ### Health Check
 ```
 GET /health
+GET /
 ```
 
 Returns `200 OK` with `{"status": "healthy"}`
 
-### Webhook Configuration (Coming Soon)
+### BSP Webhook Endpoints
+
+Each BSP has a dedicated webhook endpoint for isolation and custom processing:
+
+#### Datagen Webhook
+```
+POST /webhook/datagen
+```
+Handles webhooks from Datagen (uses Karix underneath). Supports:
+- Delivery events (`DELIVERY EVENTS`)
+- User-initiated messages
+- Batch webhooks (array of events)
+
+**Legacy endpoint**: `POST /datagen-webhook` (redirects to new endpoint)
+
+#### Aisensy Webhook
+```
+POST /webhook/aisensy
+```
+Handles webhooks from Aisensy partner account. Topics:
+- `message.status.updated`
+- `message.created`
+- `contact.created`
+- `contact.attribute.updated`
+- `wa_template.status.updated`
+
+**Legacy endpoint**: `POST /partner-webhook` (redirects to new endpoint)
+
+#### Karix Direct Webhook
+```
+POST /webhook/karix
+```
+Handles webhooks from direct Karix API integration (if not using Datagen).
+
+### Webhook Configuration Management
 ```
 POST /api/v1/webhooks/configure
 GET /api/v1/webhooks/config/:project_owner_id
