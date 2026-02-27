@@ -17,7 +17,6 @@ import (
 	"zen_messaging_gateway/utils"
 
 	"github.com/gin-contrib/cors"
-	"github.com/streadway/amqp"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
@@ -106,7 +105,7 @@ func main() {
 
 	// Start Redis connection manager
 	log.Println("Connecting to Redis...")
-	go utils.ManageRedisConnection(cfg.RedisURL)
+	go utils.ManageRedisConnection()
 
 	// Initialize RabbitMQ
 	log.Println("Initializing RabbitMQ...")

@@ -2,8 +2,10 @@ package utils
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -21,6 +23,21 @@ var (
 	connMutex    sync.Mutex
 	connChan     = make(chan struct{}, 1000) // Limit concurrent connections
 )
+
+// GetConfig loads configuration from Keys.json file (backward compatibility)
+func GetConfig() (map[string]interface{}, error) {
+	data, err := os.ReadFile("Keys.json")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read Keys.json: %w", err)
+	}
+
+	var config map[string]interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse Keys.json: %w", err)
+	}
+
+	return config, nil
+}
 
 func Init() {
 	c, err := GetConfig()

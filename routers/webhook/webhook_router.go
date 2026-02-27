@@ -43,21 +43,13 @@ func MapWebhookRoutes(router *gin.Engine) {
 	// WEBHOOK CONFIGURATION & MANAGEMENT ROUTES
 	// =========================================================================
 
-	webhookGroup := router.Group("/api/v1/webhooks")
-	{
-		// Create or update webhook configuration
-		// webhookGroup.POST("/configure", controllers.ConfigureWebhook)
-
-		// Get webhook configuration
-		// webhookGroup.GET("/config/:project_owner_id", controllers.GetWebhookConfig)
-
-		// Delete webhook configuration
-		// webhookGroup.DELETE("/config/:project_owner_id", controllers.DeleteWebhookConfig)
-
-		// Get webhook delivery logs
-		// webhookGroup.GET("/logs/:project_owner_id", controllers.GetWebhookLogs)
-
-		// Get webhook delivery stats
-		// webhookGroup.GET("/stats/:project_owner_id", controllers.GetWebhookStats)
-	}
+	// TODO: Implement webhook configuration endpoints
+	// webhookGroup := router.Group("/api/v1/webhooks")
+	// {
+	// 	webhookGroup.POST("/configure", controllers.ConfigureWebhook)
+	// 	webhookGroup.GET("/config/:project_owner_id", controllers.GetWebhookConfig)
+	// 	webhookGroup.DELETE("/config/:project_owner_id", controllers.DeleteWebhookConfig)
+	// 	webhookGroup.GET("/logs/:project_owner_id", controllers.GetWebhookLogs)
+	// 	webhookGroup.GET("/stats/:project_owner_id", controllers.GetWebhookStats)
+	// }
 }

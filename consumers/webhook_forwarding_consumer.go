@@ -137,7 +137,7 @@ var dbUpdateCh = make(chan dbUpdate, 10000)
 
 func init() {
 	// Start a small pool of DB writers to drain the async queue.
-	for range 4 {
+	for i := 0; i < 4; i++ {
 		go dbWriteWorker()
 	}
 }
@@ -245,7 +245,7 @@ func StartWebhookForwardingConsumer(ch *amqp.Channel) <-chan struct{} {
 		}
 
 		// Drain the semaphore — wait for all in-flight workers to finish.
-		for range WorkerPoolSize {
+		for i := 0; i < WorkerPoolSize; i++ {
 			sem <- struct{}{}
 		}
 
