@@ -34,6 +34,9 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Configuration files with secrets
+Keys.json
+
 # Kubernetes secrets (real secrets, not examples)
 k8s/secrets.yaml
 

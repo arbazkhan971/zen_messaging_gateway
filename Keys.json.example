@@ -1,0 +1,17 @@
+{
+    "database_name": "zen_messaging",
+    "mongo_uri": "mongodb://admin:password@host:27017/?authSource=admin",
+    "port": 8080,
+    "smtp": {
+        "email": "your-email@domain.com",
+        "password": "your-smtp-password"
+    },
+    "id": "YOUR_AWS_ACCESS_KEY_ID",
+    "secret": "YOUR_AWS_SECRET_ACCESS_KEY",
+    "bucket_region": "ap-south-1",
+    "bucket_name": "your-bucket-name",
+    "ses_region": "us-east-1",
+    "ses_from_email": "noreply@yourdomain.com",
+    "app_logo_url": "https://yourdomain.com/logo.png",
+    "frontend_url": "https://yourdomain.com"
+}
