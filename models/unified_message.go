@@ -18,7 +18,7 @@ type UnifiedMessage struct {
 	Wamid string `json:"wamid" bson:"wamid"` // Format: wamid.HBgL...
 
 	// BSP Information
-	BSP          string `json:"bsp" bson:"bsp"`                     // datagen, aisensy, karix
+	BSP          string `json:"bsp" bson:"bsp"`                             // datagen, aisensy, karix
 	BSPMessageID string `json:"bsp_message_id" bson:"bsp_message_id"` // BSP's message ID
 
 	// Contact Information
@@ -52,7 +52,7 @@ type MessageStatus struct {
 	Status    string    `json:"status" bson:"status"`         // sent, delivered, read, failed
 	Source    string    `json:"source" bson:"source"`         // BSP name
 	Timestamp time.Time `json:"timestamp" bson:"timestamp"`
-	Reason    string    `json:"reason,omitempty" bson:"reason,omitempty"`       // For failures
+	Reason    string    `json:"reason,omitempty" bson:"reason,omitempty"`         // For failures
 	ErrorCode string    `json:"error_code,omitempty" bson:"error_code,omitempty"` // BSP error code
 }
 

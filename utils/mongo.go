@@ -129,6 +129,39 @@ func GetCollection(collName string) *mongo.Collection {
 	return database.Collection(collName)
 }
 
+// InitMongo initializes MongoDB connection with the given URI and database name
+func InitMongo(mongoURI, databaseName string) error {
+	clientOptions := options.Client().ApplyURI(mongoURI).
+		SetMaxPoolSize(10).
+		SetMinPoolSize(2).
+		SetMaxConnIdleTime(30 * time.Second).
+		SetConnectTimeout(10 * time.Second).
+		SetServerSelectionTimeout(5 * time.Second).
+		SetRetryWrites(true).
+		SetRetryReads(true)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		return fmt.Errorf("failed to connect to MongoDB: %w", err)
+	}
+
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		if closeErr := client.Disconnect(ctx); closeErr != nil {
+			log.Printf("Error disconnecting failed client: %v", closeErr)
+		}
+		return fmt.Errorf("failed to ping MongoDB: %w", err)
+	}
+
+	mongoClient = client
+	database = client.Database(databaseName)
+
+	log.Printf("Successfully connected to MongoDB database: %s", databaseName)
+	return nil
+}
+
 // Connect attempts to reconnect to the MongoDB database
 func Connect() error {
 	c, err := GetConfig()

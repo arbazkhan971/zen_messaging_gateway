@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"strings"
 
+	"zen_messaging_gateway/models"
+	"zen_messaging_gateway/services"
 	"zen_messaging_gateway/utils"
 
 	"github.com/gin-gonic/gin"
@@ -102,12 +105,102 @@ func publishDatagenWebhook(webhookType string, payload map[string]interface{}) e
 		priority = 5 // High priority for user-initiated messages
 	}
 
+	// ALSO: Store in unified message tracking immediately
+	go storeDatagenMessage(webhookType, payload)
+
 	// Publish to datagen_webhook_queue
 	return utils.PublishToQueue(
 		"datagen_webhook_queue",
 		payload,
 		priority,
 	)
+}
+
+func storeDatagenMessage(webhookType string, payload map[string]interface{}) {
+	tracker := services.GetMessageTracker()
+
+	// Extract wamid
+	var wamid string
+	if events, ok := payload["events"].(map[string]interface{}); ok {
+		if mid, ok := events["mid"].(string); ok {
+			wamid = mid
+		}
+	}
+
+	// Extract status
+	var status string
+	if notifAttrs, ok := payload["notificationAttributes"].(map[string]interface{}); ok {
+		if st, ok := notifAttrs["status"].(string); ok {
+			status = normalizeDatagenStatus(st)
+		}
+	}
+
+	// Extract phone number
+	var phoneNumber string
+	if recipient, ok := payload["recipient"].(map[string]interface{}); ok {
+		if to, ok := recipient["to"].(string); ok {
+			phoneNumber = to
+		}
+	}
+
+	// Extract business number
+	var businessNumber string
+	if sender, ok := payload["sender"].(map[string]interface{}); ok {
+		if from, ok := sender["from"].(string); ok {
+			businessNumber = from
+		}
+	}
+
+	// Extract campaign/project context
+	var campaignID, projectID string
+	if recipient, ok := payload["recipient"].(map[string]interface{}); ok {
+		if reference, ok := recipient["reference"].(map[string]interface{}); ok {
+			if cid, ok := reference["parent_campaign_id"].(string); ok {
+				campaignID = cid
+			}
+			if pid, ok := reference["project_id"].(string); ok {
+				projectID = pid
+			}
+		}
+	}
+
+	// Update or create message
+	if wamid != "" && status != "" {
+		err := tracker.UpdateMessageByWamid(wamid, status, "datagen", "", "")
+		if err != nil {
+			log.Printf("[DATAGEN_WEBHOOK] Failed to update message: %v", err)
+		}
+	}
+
+	// If this is a new message (sent status), create full record
+	if status == "sent" && wamid != "" {
+		msg := models.NewUnifiedMessage("datagen", phoneNumber, businessNumber, extractProjectOwnerIDFromDatagen(payload))
+		msg.SetWamid(wamid)
+		if campaignID != "" {
+			msg.SetCampaignContext(campaignID, projectID)
+		}
+		msg.AddStatus(status, "datagen", "", "")
+
+		if err := tracker.CreateMessage(msg); err != nil {
+			log.Printf("[DATAGEN_WEBHOOK] Failed to create message: %v", err)
+		}
+	}
+}
+
+func normalizeDatagenStatus(status string) string {
+	status = strings.ToLower(status)
+	switch status {
+	case "sent":
+		return "sent"
+	case "delivered":
+		return "delivered"
+	case "read":
+		return "read"
+	case "failed", "not sent":
+		return "failed"
+	default:
+		return status
+	}
 }
 
 func triggerDatagenWebhookForwarding(webhookType string, payload map[string]interface{}) {

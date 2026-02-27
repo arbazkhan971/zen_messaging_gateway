@@ -717,8 +717,82 @@ func declareTopology(ch *amqp.Channel) error {
 		// Don't return error - delayed exchange binding is optional
 	}
 
+	// ===========================================================================
+	// BSP-SPECIFIC WEBHOOK QUEUES (New - for multiple BSP endpoints)
+	// ===========================================================================
+
+	// Common queue args for BSP webhooks
+	bspQueueArgs := amqp.Table{
+		"x-queue-mode":   "lazy",
+		"x-max-priority": 10, // Support priority (user_message: 5, campaign: 0)
+	}
+
+	// Datagen webhook queue
+	if _, err := ch.QueueDeclare("datagen_webhook_queue", true, false, false, false, bspQueueArgs); err != nil {
+		log.Printf("[TOPOLOGY] Warning: Failed to declare datagen_webhook_queue: %v", err)
+	}
+
+	// Aisensy webhook queue
+	if _, err := ch.QueueDeclare("aisensy_webhook_queue", true, false, false, false, bspQueueArgs); err != nil {
+		log.Printf("[TOPOLOGY] Warning: Failed to declare aisensy_webhook_queue: %v", err)
+	}
+
+	// Karix webhook queue
+	if _, err := ch.QueueDeclare("karix_webhook_queue", true, false, false, false, bspQueueArgs); err != nil {
+		log.Printf("[TOPOLOGY] Warning: Failed to declare karix_webhook_queue: %v", err)
+	}
+
+	log.Println("[TOPOLOGY] ✅ BSP webhook queues declared successfully")
+
 	// Note: Success logging moved to ManageConnection to prevent duplicates
 	return nil
+}
+
+// InitRabbitMQ initializes RabbitMQ connection and declares topology
+func InitRabbitMQ(rabbitmqURL string) error {
+	// Set the RabbitMQ URL in environment for getConnectionFromPool to use
+	// Or directly connect here
+	amqpURL := rabbitmqURL
+	if !strings.Contains(amqpURL, "heartbeat=") {
+		if strings.Contains(amqpURL, "?") {
+			amqpURL += "&heartbeat=30&connection_timeout=30"
+		} else {
+			amqpURL += "?heartbeat=30&connection_timeout=30"
+		}
+	}
+
+	conn, err := amqp.Dial(amqpURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to RabbitMQ: %w", err)
+	}
+
+	RabbitMQConn = conn
+
+	ch, err := conn.Channel()
+	if err != nil {
+		return fmt.Errorf("failed to create channel: %w", err)
+	}
+	defer ch.Close()
+
+	// Declare topology
+	if err := declareTopology(ch); err != nil {
+		return fmt.Errorf("failed to declare topology: %w", err)
+	}
+
+	log.Println("[RABBITMQ] ✅ Successfully initialized RabbitMQ")
+	return nil
+}
+
+// CloseRabbitMQ closes RabbitMQ connections
+func CloseRabbitMQ() {
+	CloseConnectionPool()
+	if RabbitMQConn != nil {
+		RabbitMQConn.Close()
+	}
+	if RabbitMQChannel != nil {
+		RabbitMQChannel.Close()
+	}
+	log.Println("[RABBITMQ] Closed all connections")
 }
 
 // ManageConnection is a long-running function that handles the connection lifecycle.

@@ -13,6 +13,7 @@ import (
 	"zen_messaging_gateway/config"
 	"zen_messaging_gateway/consumers"
 	"zen_messaging_gateway/routers/webhook"
+	"zen_messaging_gateway/services"
 	"zen_messaging_gateway/utils"
 
 	"github.com/gin-contrib/cors"
@@ -98,6 +99,10 @@ func main() {
 	if err := utils.InitMongo(cfg.MongoURI, cfg.DatabaseName); err != nil {
 		log.Fatal("Failed to initialize MongoDB:", err)
 	}
+
+	// Initialize message tracker
+	log.Println("Initializing message tracker...")
+	services.InitMessageTracker()
 
 	// Start Redis connection manager
 	log.Println("Connecting to Redis...")
