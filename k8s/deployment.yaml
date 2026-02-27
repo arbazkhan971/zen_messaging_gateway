@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zen-messaging-gateway
+  labels:
+    app: zen-messaging-gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zen-messaging-gateway
+  template:
+    metadata:
+      labels:
+        app: zen-messaging-gateway
+    spec:
+      containers:
+      - name: zen-messaging-gateway
+        image: your-registry/zen-messaging-gateway:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: zen-messaging-secrets
+              key: mongo-uri
+        - name: DATABASE_NAME
+          value: "zen_messaging"
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: zen-messaging-secrets
+              key: redis-url
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: zen-messaging-secrets
+              key: rabbitmq-url
+        - name: SERVER_PORT
+          value: "8080"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
