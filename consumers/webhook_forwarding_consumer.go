@@ -133,18 +133,31 @@ type dbUpdate struct {
 	update bson.M
 }
 
-var dbUpdateCh = make(chan dbUpdate, 10000)
+var (
+	dbUpdateCh     = make(chan dbUpdate, 10000)
+	dbWritersOnce  sync.Once
+	dbWritersStarted bool
+)
 
-func init() {
-	// Start a small pool of DB writers to drain the async queue.
-	for i := 0; i < 4; i++ {
-		go dbWriteWorker()
-	}
+// StartDBWriters initializes the DB writer pool
+// Call this after MongoDB is initialized
+func StartDBWriters() {
+	dbWritersOnce.Do(func() {
+		for i := 0; i < 4; i++ {
+			go dbWriteWorker()
+		}
+		dbWritersStarted = true
+		log.Println("[WEBHOOK_FORWARDER] Started 4 DB writer workers")
+	})
 }
 
 func dbWriteWorker() {
-	collection := utils.GetCollection("webhook_delivery_logs")
 	for u := range dbUpdateCh {
+		collection := utils.GetCollection("webhook_delivery_logs")
+		if collection == nil {
+			log.Printf("[WEBHOOK_FORWARDER] DB not ready, skipping update for %s", u.id.Hex())
+			continue
+		}
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		_, err := collection.UpdateOne(ctx, bson.M{"_id": u.id}, u.update)
 		cancel()

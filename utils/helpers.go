@@ -1,7 +1,6 @@
 package utils
 
 import (
-	Models "zen_messaging_gateway/models"
 	"context"
 	"fmt"
 	"log"
@@ -9,6 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"zen_messaging_gateway/models"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -197,7 +198,7 @@ func getStringValue(payload map[string]interface{}, keys ...string) string {
 	return ""
 }
 
-func GetProjectOwnerIDFromContext(c *gin.Context, ctx context.Context) (string, *Models.Agent, error) {
+func GetProjectOwnerIDFromContext(c *gin.Context, ctx context.Context) (string, *models.Agent, error) {
 	agentID := c.GetString("user_id")
 	if agentID == "" {
 		return "", nil, fmt.Errorf("user_id not found in context")
@@ -208,20 +209,20 @@ func GetProjectOwnerIDFromContext(c *gin.Context, ctx context.Context) (string, 
 		return "", nil, fmt.Errorf("database connection failed for agents")
 	}
 
-	var agent Models.Agent
+	var agent models.Agent
 	err := agentCollection.FindOne(ctx, bson.M{"_id": agentID}).Decode(&agent)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to fetch agent: %w", err)
 	}
 
 	var projectOwnerID string
-	if agent.Type == Models.AgentTypeOwner {
+	if agent.Type == models.AgentTypeOwner {
 		projectOwnerID = agent.ID
-	} else if agent.Type == Models.AgentTypeAgent {
+	} else if agent.Type == models.AgentTypeAgent {
 		if agent.ProjectOwnerID == "" {
 			// If agent doesn't have ProjectOwnerID, try to find the owner from the project
-			var projectOwner Models.Agent
-			err = agentCollection.FindOne(ctx, bson.M{"project_id": agent.ProjectID, "type": Models.AgentTypeOwner}).Decode(&projectOwner)
+			var projectOwner models.Agent
+			err = agentCollection.FindOne(ctx, bson.M{"project_id": agent.ProjectID, "type": models.AgentTypeOwner}).Decode(&projectOwner)
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to fetch project owner: %w", err)
 			}

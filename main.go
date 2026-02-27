@@ -80,10 +80,19 @@ func initializeServer() (*gin.Engine, error) {
 }
 
 func main() {
+	// Catch panics at the very start
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("FATAL PANIC in main(): %v", r)
+			os.Exit(1)
+		}
+	}()
+
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	log.Println("🚀 Starting ZEN Messaging Gateway...")
+	log.Println("Current directory:", getCurrentDir())
 
 	// Load configuration
 	cfg, err := config.LoadConfig()
@@ -102,6 +111,10 @@ func main() {
 	// Initialize message tracker
 	log.Println("Initializing message tracker...")
 	services.InitMessageTracker()
+
+	// Start DB writers for webhook forwarding
+	log.Println("Starting webhook delivery DB writers...")
+	consumers.StartDBWriters()
 
 	// Start Redis connection manager
 	log.Println("Connecting to Redis...")
@@ -171,4 +184,12 @@ func main() {
 	utils.CloseRabbitMQ()
 
 	log.Println("✅ Server exited successfully")
+}
+
+func getCurrentDir() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "unknown"
+	}
+	return dir
 }

@@ -2,6 +2,8 @@ module zen_messaging_gateway
 
 go 1.21
 
+toolchain go1.23.7
+
 require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-contrib/gzip v0.0.6
